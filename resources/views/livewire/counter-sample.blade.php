@@ -5,6 +5,10 @@
             wire:click="increment">
             Count Up
         </button>
+        <button wire:click="decrement">Count Down</button>
+        <button wire:click="decade">x10</button>
+        <button wire:click="zero">zero</button>
         <h1>{{ $count }}</h1>
+        <h1>{{ $data }}</h1>
     </div>
 </div>

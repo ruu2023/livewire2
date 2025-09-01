@@ -11,7 +11,7 @@
     @livewireStyles
 </head>
 
-<body>
+<body style="background: black; color: white;">
     <div class="container">
         <h1>カウントアップ</h1>
         <livewire:counter-sample />
