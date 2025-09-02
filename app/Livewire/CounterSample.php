@@ -52,7 +52,7 @@ class CounterSample extends Component
         // }
         // dd(DB::table('counters')->insertGetId(['count' => 3]), $ddItem, $items, $itemLast);
 
-        $data = DB::table('counters')->latest('id')->first()->count;
+        $data = DB::table('counters')->latest('id')->first()->count ?? 0;
         return view('livewire.counter-sample', compact('data'));
     }
 }
