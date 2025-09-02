@@ -4,7 +4,8 @@ use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 
 Route::get('/', function () {
-    return view('welcome');
+    // return view('welcome');
+    return view('index');
 })->name('home');
 
 Route::view('dashboard', 'dashboard')
@@ -20,7 +21,3 @@ Route::middleware(['auth'])->group(function () {
 });
 
 require __DIR__.'/auth.php';
-
-Route::get('hello', function() {
-    return view('index');
-});
