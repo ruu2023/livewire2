@@ -64,27 +64,35 @@ jobs:
       # 6. データベースマイグレーション用ジョブを作成または更新
       - name: Create or Update Migration Job
         run: |
-          # ... (ジョブの存在を確認するif/elseロジック)
+          # ジョブが存在するかどうかを確認し、コマンドの出力をすべて抑制する
+          # 存在しない場合、このコマンドは失敗し、終了コードが0以外になる
+          gcloud run jobs describe ${{ env.GCP_SERVICE_NAME }}-migrate --region ${{ env.GCP_REGION }} &> /dev/null
 
-          # 存在しない場合に実行する create コマンド
-          gcloud run jobs create ${{ env.GCP_SERVICE_NAME }}-migrate \
-            --region ${{ env.GCP_REGION }} \
-            --image ${{ env.IMAGE_NAME }} \
-            --set-cloudsql-instances ${{ env.GCP_SQL_CONNECTION_NAME }} \
-            --args="php,artisan,migrate,--force" \
-            --task-timeout=300s \
-            --set-env-vars="LOG_CHANNEL=stderr,DB_CONNECTION=mysql,DB_SOCKET=/cloudsql/${{ env.GCP_SQL_CONNECTION_NAME }},DB_DATABASE=${{ secrets.DB_DATABASE }},DB_USERNAME=${{ secrets.DB_USERNAME }},DB_PASSWORD=${{ secrets.DB_PASSWORD }}"
+          # 直前のコマンドの終了コード ($?) をチェックする
+          # 終了コードが0でない (not equal) 場合、つまりジョブが存在しない場合
+          if [[ $? -ne 0 ]]; then
+            echo "Job '${{ env.GCP_SERVICE_NAME }}-migrate' not found. Creating a new job..."
+            # ジョブを新規作成する
+            gcloud run jobs create ${{ env.GCP_SERVICE_NAME }}-migrate \
+              --region ${{ env.GCP_REGION }} \
+              --image ${{ env.IMAGE_NAME }} \
+              --set-cloudsql-instances ${{ env.GCP_SQL_CONNECTION_NAME }} \
+              --args="php,artisan,migrate,--force" \
+              --task-timeout=300s \
+              --set-env-vars="LOG_CHANNEL=stderr,DB_CONNECTION=mysql,DB_SOCKET=/cloudsql/${{ env.GCP_SQL_CONNECTION_NAME }},DB_DATABASE=${{ secrets.DB_DATABASE }},DB_USERNAME=${{ secrets.DB_USERNAME }},DB_PASSWORD=${{ secrets.DB_PASSWORD }}"
 
-          # ... (else節の update コマンドも同様に修正)
-
-          # 存在する場合に実行する update コマンド
-          gcloud run jobs update ${{ env.GCP_SERVICE_NAME }}-migrate \
-            --region ${{ env.GCP_REGION }} \
-            --image ${{ env.IMAGE_NAME }} \
-            --set-cloudsql-instances ${{ env.GCP_SQL_CONNECTION_NAME }} \
-            --args="php,artisan,migrate,--force" \
-            --task-timeout=300s \
-            --set-env-vars="LOG_CHANNEL=stderr,DB_CONNECTION=mysql,DB_SOCKET=/cloudsql/${{ env.GCP_SQL_CONNECTION_NAME }},DB_DATABASE=${{ secrets.DB_DATABASE }},DB_USERNAME=${{ secrets.DB_USERNAME }},DB_PASSWORD=${{ secrets.DB_PASSWORD }}"
+          # 終了コードが0の場合、つまりジョブが既に存在する場合
+          else
+            echo "Job '${{ env.GCP_SERVICE_NAME }}-migrate' found. Updating the existing job..."
+            # 既存のジョブを更新する
+            gcloud run jobs update ${{ env.GCP_SERVICE_NAME }}-migrate \
+              --region ${{ env.GCP_REGION }} \
+              --image ${{ env.IMAGE_NAME }} \
+              --set-cloudsql-instances ${{ env.GCP_SQL_CONNECTION_NAME }} \
+              --args="php,artisan,migrate,--force" \
+              --task-timeout=300s \
+              --set-env-vars="LOG_CHANNEL=stderr,DB_CONNECTION=mysql,DB_SOCKET=/cloudsql/${{ env.GCP_SQL_CONNECTION_NAME }},DB_DATABASE=${{ secrets.DB_DATABASE }},DB_USERNAME=${{ secrets.DB_USERNAME }},DB_PASSWORD=${{ secrets.DB_PASSWORD }}"
+          fi
 
       # 7. データベースマイグレーションを実行
       - name: Execute Migration Job
