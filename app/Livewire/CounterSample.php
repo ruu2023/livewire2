@@ -9,6 +9,7 @@ class CounterSample extends Component
 {
     public $count = 0;
     public $latestId;
+    public $message;
 
     public function __construct()
     {
@@ -35,6 +36,11 @@ class CounterSample extends Component
     public function saveNum()
     {
         $this->latestId = DB::table('counters')->insertGetId(['count' => $this->count]);
+    }
+
+    public function getMessage($message)
+    {
+        $this->message = $message;
     }
 
     public function render()

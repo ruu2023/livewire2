@@ -12,5 +12,12 @@
         <h1>{{ $count }}</h1>
         <h1>{{ $data }}</h1>
         <h2>{{ $latestId }}</h2>
+        <button type="button" class="btn btn-primary"
+            style="--bs-btn-padding-y: .80rem; --bs-btn-padding-x: .5rem; --bs-btn-font-size: .75rem;"
+            wire:click="getMessage('今日はおわりよん')">
+            get
+        </button>
+        <p>{{ $message }}</p>
+
     </div>
 </div>
