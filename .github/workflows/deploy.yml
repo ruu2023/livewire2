@@ -79,7 +79,7 @@ jobs:
               --set-cloudsql-instances ${{ env.GCP_SQL_CONNECTION_NAME }} \
               --args="php,artisan,migrate,--force" \
               --task-timeout=300s \
-              --set-env-vars="LOG_CHANNEL=stderr,DB_CONNECTION=mysql,DB_SOCKET=/cloudsql/${{ env.GCP_SQL_CONNECTION_NAME }},DB_DATABASE=${{ secrets.DB_DATABASE }},DB_USERNAME=${{ secrets.DB_USERNAME }},DB_PASSWORD=${{ secrets.DB_PASSWORD }}"
+              --set-env-vars="APP_KEY=${{ secrets.APP_KEY }},LOG_CHANNEL=stderr,DB_CONNECTION=mysql,DB_SOCKET=/cloudsql/${{ env.GCP_SQL_CONNECTION_NAME }},DB_DATABASE=${{ secrets.DB_DATABASE }},DB_USERNAME=${{ secrets.DB_USERNAME }},DB_PASSWORD=${{ secrets.DB_PASSWORD }}"
 
           # 終了コードが0の場合、つまりジョブが既に存在する場合
           else
@@ -91,7 +91,7 @@ jobs:
               --set-cloudsql-instances ${{ env.GCP_SQL_CONNECTION_NAME }} \
               --args="php,artisan,migrate,--force" \
               --task-timeout=300s \
-              --set-env-vars="LOG_CHANNEL=stderr,DB_CONNECTION=mysql,DB_SOCKET=/cloudsql/${{ env.GCP_SQL_CONNECTION_NAME }},DB_DATABASE=${{ secrets.DB_DATABASE }},DB_USERNAME=${{ secrets.DB_USERNAME }},DB_PASSWORD=${{ secrets.DB_PASSWORD }}"
+              --set-env-vars="APP_KEY=${{ secrets.APP_KEY }},LOG_CHANNEL=stderr,DB_CONNECTION=mysql,DB_SOCKET=/cloudsql/${{ env.GCP_SQL_CONNECTION_NAME }},DB_DATABASE=${{ secrets.DB_DATABASE }},DB_USERNAME=${{ secrets.DB_USERNAME }},DB_PASSWORD=${{ secrets.DB_PASSWORD }}"
           fi
 
       # 7. データベースマイグレーションを実行
