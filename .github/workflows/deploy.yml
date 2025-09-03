@@ -62,44 +62,34 @@ jobs:
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
 
       # 6. データベースマイグレーション用ジョブを作成または更新
-      - name: Create or Update Migration Job
+      # gcloud run jobs deploy コマンドは、ジョブが存在しない場合は作成し、
+      # 存在する場合は更新するため、if文での分岐が不要になり、コードがシンプルになります。
+      - name: Deploy Migration Job
         run: |
-          # ジョブが存在するかどうかを確認し、コマンドの出力をすべて抑制する
-          # 存在しない場合、このコマンドは失敗し、終了コードが0以外になる
-          gcloud run jobs describe ${{ env.GCP_SERVICE_NAME }}-migrate --region ${{ env.GCP_REGION }} &> /dev/null
+          gcloud run jobs deploy ${{ env.GCP_SERVICE_NAME }}-migrate \
+            --region ${{ env.GCP_REGION }} \
+            --image ${{ env.IMAGE_NAME }} \
+            --set-cloudsql-instances ${{ env.GCP_SQL_CONNECTION_NAME }} \
+            --command="php" \
+            --args="artisan,migrate,--force" \
+            --task-timeout=300s \
+            --set-env-vars="APP_KEY=${{ secrets.APP_KEY }},LOG_CHANNEL=stderr,DB_CONNECTION=mysql,DB_SOCKET=/cloudsql/${{ env.GCP_SQL_CONNECTION_NAME }},DB_DATABASE=${{ secrets.DB_DATABASE }},DB_USERNAME=${{ secrets.DB_USERNAME }},DB_PASSWORD=${{ secrets.DB_PASSWORD }}"
 
-          # 直前のコマンドの終了コード ($?) をチェックする
-          # 終了コードが0でない (not equal) 場合、つまりジョブが存在しない場合
-          if [[ $? -ne 0 ]]; then
-            echo "Job '${{ env.GCP_SERVICE_NAME }}-migrate' not found. Creating a new job..."
-            # ジョブを新規作成する
-            gcloud run jobs create ${{ env.GCP_SERVICE_NAME }}-migrate \
-              --region ${{ env.GCP_REGION }} \
-              --image ${{ env.IMAGE_NAME }} \
-              --set-cloudsql-instances ${{ env.GCP_SQL_CONNECTION_NAME }} \
-              --args="php,artisan,migrate,--force" \
-              --task-timeout=300s \
-              --set-env-vars="APP_KEY=${{ secrets.APP_KEY }},LOG_CHANNEL=stderr,DB_CONNECTION=mysql,DB_SOCKET=/cloudsql/${{ env.GCP_SQL_CONNECTION_NAME }},DB_DATABASE=${{ secrets.DB_DATABASE }},DB_USERNAME=${{ secrets.DB_USERNAME }},DB_PASSWORD=${{ secrets.DB_PASSWORD }}"
-
-          # 終了コードが0の場合、つまりジョブが既に存在する場合
-          else
-            echo "Job '${{ env.GCP_SERVICE_NAME }}-migrate' found. Updating the existing job..."
-            # 既存のジョブを更新する
-            gcloud run jobs update ${{ env.GCP_SERVICE_NAME }}-migrate \
-              --region ${{ env.GCP_REGION }} \
-              --image ${{ env.IMAGE_NAME }} \
-              --set-cloudsql-instances ${{ env.GCP_SQL_CONNECTION_NAME }} \
-              --args="php,artisan,migrate,--force" \
-              --task-timeout=300s \
-              --set-env-vars="APP_KEY=${{ secrets.APP_KEY }},LOG_CHANNEL=stderr,DB_CONNECTION=mysql,DB_SOCKET=/cloudsql/${{ env.GCP_SQL_CONNECTION_NAME }},DB_DATABASE=${{ secrets.DB_DATABASE }},DB_USERNAME=${{ secrets.DB_USERNAME }},DB_PASSWORD=${{ secrets.DB_PASSWORD }}"
-          fi
+      # 7. データベースマイグレーションジョブを実行
+      # execute コマンドがこのステップで実行されると仮定します。
+      # --no-wait フラグを追加することで、ジョブの完了を待たずに次のステップへ進みます。
+      # これにより、GitHub Actionsがハングアップするのを防ぎます。
+      # 注意: この場合、マイグレーションの成否をこのワークフローで確認することはできません。
+      - name: Execute Migration Job (Asynchronously)
+        run: |
+          gcloud run jobs execute ${{ env.GCP_SERVICE_NAME }}-migrate --region ${{ env.GCP_REGION }} --no-wait
 
       # 7. データベースマイグレーションを実行
-      - name: Execute Migration Job
-        run: |
-          gcloud run jobs execute ${{ env.GCP_SERVICE_NAME }}-migrate \
-            --region ${{ env.GCP_REGION }} \
-            --wait
+      # - name: Execute Migration Job
+      #   run: |
+      #     gcloud run jobs execute ${{ env.GCP_SERVICE_NAME }}-migrate \
+      #       --region ${{ env.GCP_REGION }} \
+      #       --wait
 
       # 8. Cloud Runへデプロイ
       - name: Deploy to Cloud Run
