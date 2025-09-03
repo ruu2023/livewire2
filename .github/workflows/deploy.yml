@@ -1,0 +1,86 @@
+# .github/workflows/deploy.yml
+
+name: Deploy Laravel to Cloud Run
+
+# mainブランチにプッシュされたときにワークフローを実行
+on:
+  push:
+    branches:
+      - main
+
+# 環境変数を設定
+env:
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_SERVICE_NAME: "laravel-service" # Cloud Runのサービス名
+  GCP_REGION: "us-central1" # Cloud RunとArtifact Registryのリージョン
+  GCP_ARTIFACT_REPOSITORY: "laravel-app" # Artifact Registryのリポジトリ名
+  GCP_SQL_CONNECTION_NAME: ${{ secrets.GCP_SQL_CONNECTION_NAME }}
+
+jobs:
+  deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+
+    # Google Cloudへの認証
+    permissions:
+      contents: "read"
+      id-token: "write"
+
+    steps:
+      # 1. リポジトリのコードをチェックアウト
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Google Cloudへの認証
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: "google-github-actions/auth@v2"
+        with:
+          credentials_json: "${{ secrets.GCP_SA_KEY }}"
+
+      # 3. gcloud CLIのセットアップ
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      # 4. Docker認証の設定
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev
+
+      # 5. Dockerイメージのビルドとプッシュ
+      - name: Build and Push Docker image
+        run: |
+          # イメージ名を定義 (リージョン-docker.pkg.dev/プロジェクトID/リポジトリ名/サービス名:コミットSHA)
+          export IMAGE_NAME=${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GCP_ARTIFACT_REPOSITORY }}/${{ env.GCP_SERVICE_NAME }}:${{ github.sha }}
+
+          # Dockerイメージをビルド
+          docker build -t $IMAGE_NAME .
+
+          # Artifact Registryにイメージをプッシュ
+          docker push $IMAGE_NAME
+
+          # 後続のステップでイメージ名を使えるように出力に設定
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+
+      # 6. データベースマイグレーションの実行
+      # 新しいイメージを使用して一時的なCloud Run Jobを実行し、マイグレーションを行う
+      - name: Run Database Migrations
+        run: |
+          gcloud run jobs execute ${{ env.GCP_SERVICE_NAME }}-migrate \
+            --region ${{ env.GCP_REGION }} \
+            --args="php,artisan,migrate,--force" \
+            --task-timeout=300 \
+            --image ${{ env.IMAGE_NAME }} \
+            --set-cloudsql-instances ${{ env.GCP_SQL_CONNECTION_NAME }} \
+            --wait
+
+      # 7. Cloud Runへデプロイ
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.GCP_SERVICE_NAME }} \
+            --image ${{ env.IMAGE_NAME }} \
+            --region ${{ env.GCP_REGION }} \
+            --platform managed \
+            --quiet \
+            --add-cloudsql-instances ${{ env.GCP_SQL_CONNECTION_NAME }}
+            # 必要に応じて他の環境変数を設定
+            # --set-env-vars="APP_NAME=Laravel,APP_ENV=production"

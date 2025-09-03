@@ -14,7 +14,7 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN apt-get install -y nginx
 
 # Nginxの設定ファイルをコピー
-COPY ./docker/nginx.conf /etc/nginx/sites-available/default
+COPY .docker/nginx.conf /etc/nginx/sites-available/default
 
 # アプリケーションのソースコードをコピー
 WORKDIR /var/www/html
@@ -28,7 +28,7 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 # エントリーポイントスクリプトをコピーして実行権限を付与
-COPY ./docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY .docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # ポート8080を公開
