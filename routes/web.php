@@ -8,6 +8,12 @@ Route::get('/', function () {
     return view('index');
 })->name('home');
 
+Route::get('/greeting', function()
+{
+    return view('greeting');
+})->name('greetinge');
+
+
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
     ->name('dashboard');

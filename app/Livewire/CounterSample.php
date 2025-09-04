@@ -48,15 +48,6 @@ class CounterSample extends Component
         $param = [
             'count' => 2
         ];
-        // DB::insert('insert into counters(count) values(:count)', $param);
-        // $items = DB::table('counters')->select( 'id', 'count')->get();
-        // $itemLast = DB::table('counters')->latest('id')->first();
-        // $ddItem = [];
-        // foreach( $items as $item)
-        // {
-        //     $ddItem[] = $item->id . " : " . $item->count;
-        // }
-        // dd(DB::table('counters')->insertGetId(['count' => 3]), $ddItem, $items, $itemLast);
 
         $data = DB::table('counters')->latest('id')->first()->count ?? 0;
         return view('livewire.counter-sample', compact('data'));
