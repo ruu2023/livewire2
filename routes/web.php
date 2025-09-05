@@ -13,6 +13,11 @@ Route::get('/greeting', function()
     return view('greeting');
 })->name('greeting');
 
+Route::get('/message', function()
+{
+    return view('message');
+})->name('message');
+
 
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
