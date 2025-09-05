@@ -11,7 +11,7 @@ Route::get('/', function () {
 Route::get('/greeting', function()
 {
     return view('greeting');
-})->name('greetinge');
+})->name('greeting');
 
 
 Route::view('dashboard', 'dashboard')

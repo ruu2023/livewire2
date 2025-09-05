@@ -10,6 +10,19 @@
 
 <body style="background: black; color: white;">
     {{ $slot }}
+
+    <footer>
+        <table>
+            <tr>
+                <th>Home</th>
+                <td><a href="{{ route('home') }}">Home</a></td>
+            </tr>
+            <tr>
+                <th>Greeting</th>
+                <td><a href="{{ route('greeting') }}">Greeting</a></td>
+            </tr>
+        </table>
+    </footer>
 </body>
 
 </html>
