@@ -92,3 +92,5 @@ class GreetMessage extends Component
 ```php
 Livewire encountered a missing root tag when trying to render a component. When rendering a Blade view, make sure it contains a root HTML tag.
 ```
+
+
